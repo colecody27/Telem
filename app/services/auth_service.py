@@ -23,15 +23,20 @@ def get_user(id):
 
 # Validate credentials and return JWT
 def authenticate_user(email, password):
-    user = User.query.get(User.email == email)
+    user = User.query.filter_by(email=email).first()
     
-    if email != user.email or user.password_hash != password:
+    if not user:
+        logger.info(f'Authentication of user with email: {email} as failed since email DNE')
+        return {'error': f'User with email {email} does not exist, plaese register'}
+    if email != user.email or not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+        print(f'Provided pw: {password.encode("utf-8")} Stored PW: {user.password_hash}')
         logger.info(f'Authentication of user with email: {email} as failed')
-        return None
+        return {'error': f'Email or password is incorrect'}
     
+    token = create_access_token(identity=str(user.id))
     logger.info(f'User with email: {email} has been authenticated')
-    return create_access_token(identity=user.id)
-    
+    return token
+
 # Revoke token 
 def logout_user():
     pass
@@ -56,7 +61,7 @@ def register_user(email, username, password, role=Role.ENGINEER):
         logger.info(f'Failed to register user with email: {email}, due to password restrictions')
         return msg
     
-    password_hash = bcrypt.hashpw(password=password.encode('utf-8'), salt=bcrypt.gensalt())
+    password_hash = bcrypt.hashpw(password=password.encode('utf-8'), salt=bcrypt.gensalt()).decode('utf-8')
     user = User(email=email, username=username, password_hash=password_hash, role=role)
     try:
         db.session.add(user)

@@ -2,10 +2,11 @@ import re
 from app.models import User
 
 def is_email_valid(email):
+    user = User.query.filter_by(email=email).first()
+    if user:
+        return False, {'error': 'Account with this email already exists'}
     if not re.fullmatch("[^@]+@[^@]+\.[^@]+", email):
         return False, {'error': 'Invalid email'}
-    if is_user(email):
-        return False, {'error': 'Account with this email already exists'}
     return True, {}
 
 def is_password_valid(password):

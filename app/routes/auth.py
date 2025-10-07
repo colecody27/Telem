@@ -6,8 +6,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 # GET
-@jwt_required()
 @auth_bp.route('/me')
+@jwt_required()
 def get_user():
     id = get_jwt_identity()
     user = auth_service.get_user(id)
@@ -28,14 +28,9 @@ def login():
     if not email or not password:
         return jsonify({'error': 'Missing email or password'}), 401
     
-    # Verify email exist
-    is_user = auth_service.is_user(email)
-    if not is_user:
-        return jsonify({'error': f'User with email {email} does not exist, plaese register'})
-    
     # Verify account
     token = auth_service.authenticate_user(email, password)
-    if not token:
+    if 'error' in token:
         return jsonify({'error': 'Invalid email or password'}), 401
 
     return jsonify(access_token=token)
@@ -51,5 +46,7 @@ def register():
     if not email or not username or not password:
         return jsonify({'error': f'Email, username, and password are required'})
     
-    auth_service.register_user(email=email, username=username, password=password)
+    error = auth_service.register_user(email=email, username=username, password=password)
+    if 'error' in error:
+        return jsonify(error)
     return jsonify({'message': f'User has been registered successfully'})
