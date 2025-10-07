@@ -1,18 +1,18 @@
-from flask import Flask
+from flask import Blueprint
 
-app = Flask(__name__)
+alert_bp = Blueprint('alert', __name__, url_prefix='/api/alerts')
 
 # GET
-@app.route('/api/alerts')
+@alert_bp.route('')
 def get_alerts():
     pass
 
 # GET
-@app.route('/api/alerts/<id>/')
+@alert_bp.route('/<id>')
 def get_alert(id=None):
     pass
 
 # PUT
-@app.route('/api/alerts/<id>/ack')
+@alert_bp.route('/<id>/ack')
 def ack_alert(id=None):
     pass

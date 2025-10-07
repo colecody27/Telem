@@ -1,28 +1,28 @@
-from flask import Flask
+from flask import Blueprint
 
-app = Flask(__name__)
+sensor_bp = Blueprint('sensors', __name__, url_prefix='/api/sensors/')
 
 # POST 
-@app.route('/api/sensors', methods=['POST'])
+@sensor_bp.route(methods=['POST'])
 def create_sensor():
     pass
 
 # GET
-@app.route('/api/sensors')
+@sensor_bp.route('')
 def get_sensors():
     pass
 
 # GET
-@app.route('/api/sensors/<id>')
+@sensor_bp.route('/api/sensors/<id>')
 def get_sensor(id=None):
     pass
 
 # PUT
-@app.route('/api/sensors/<id>', methods=['PUT'])
+@sensor_bp.route('/api/sensors/<id>', methods=['PUT'])
 def update_sensor(id=None):
     pass
 
 # DELETE
-@app.route('/api/sensors/<id>', methods=['DELETE'])
+@sensor_bp.route('/api/sensors/<id>', methods=['DELETE'])
 def remove_sensor(id=None):
     pass
