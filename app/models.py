@@ -43,10 +43,9 @@ class Sensor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('Users.id', ondelete='CASCADE'), nullable=False)
     type = db.Column(db.String(50), nullable=False)
-    ack = db.Column(db.Boolean, default=False)
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
-    is_active = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
@@ -59,8 +58,6 @@ class Sensor(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "type": self.type,
-            "ack": self.ack,
-            "ack_by": self.ack_by,
             "latitude": self.latitude,
             "longitude": self.longitude,
             "is_active": self.is_active,

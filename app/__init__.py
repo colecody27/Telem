@@ -15,5 +15,7 @@ def create_app():
     app.register_blueprint(auth_bp)
     from app.routes.alerts import alert_bp
     app.register_blueprint(alert_bp)
+    from app.routes.sensors import sensor_bp
+    app.register_blueprint(sensor_bp)
 
     return app

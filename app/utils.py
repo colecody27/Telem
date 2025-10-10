@@ -29,3 +29,19 @@ def is_username_valid(username):
 # Validate email exist 
 def is_user(email):
     return True if User.query.filter_by(email=email).first() else False
+
+def to_float(value):
+    if value is None:
+        return True, None
+    try:
+        return True, float(value)
+    except (TypeError, ValueError):
+        return False, None
+
+def to_boolean(value):
+    if value is None:
+        return True, None
+    try:
+        return True, bool(value)
+    except (TypeError, ValueError):
+        return False, None
