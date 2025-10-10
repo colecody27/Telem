@@ -31,7 +31,6 @@ def create_sensor(user_id, type, latitude=None,
         logger.error(f"Error creating sensor for user {user_id}: {e}")
         return {"error": "Internal service error"}
 
-
 def get_sensors(user_id=None):
     """Return a list of sensors. If user_id is provided, filter by that user."""
     try:
@@ -44,7 +43,6 @@ def get_sensors(user_id=None):
         logger.error(f"Error fetching sensors: {e}")
         return None
 
-
 def get_sensor(sensor_id):
     """Return a sensor dict by id or None if not found."""
     try:
@@ -55,7 +53,7 @@ def get_sensor(sensor_id):
         return None
 
 
-def update_sensor(sensor_id, **fields):
+def update_sensor(sensor_id, fields):
     """Update allowed sensor fields and return the updated dict, or None on not found/error."""
     allowed = {"type", "latitude", "longitude", "is_active", "description", "ack", "ack_by"}
     try:
@@ -68,7 +66,7 @@ def update_sensor(sensor_id, **fields):
             if key not in allowed:
                 logger.info(f'Attempted to update {key} on sensor {sensor_id}. Skipping.')
                 continue
-            else:
+            elif value != None:
                 setattr(sensor, key, value)
 
         db.session.commit()

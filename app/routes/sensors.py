@@ -10,8 +10,8 @@ sensor_bp = Blueprint('sensors', __name__, url_prefix='/api/sensors/')
 @sensor_bp.route('', methods=['POST'])
 @jwt_required()
 def create_sensor():
-    id = get_jwt_identity()
-    user = auth_service.get_user(id)
+    user_id = get_jwt_identity()
+    user = auth_service.get_user(user_id)
 
     if not user:
         return jsonify({'error': 'User does not exist'})
@@ -32,7 +32,7 @@ def create_sensor():
     if not is_valid_active:
         return jsonify({'error': 'is_active must be true or false'})
     
-    sensor = sensor_service.create_sensor(user_id=id, type=type, latitude=latitude, longitude=longitude, is_active=is_active, description=description)
+    sensor = sensor_service.create_sensor(user_id=user_id, type=type, latitude=latitude, longitude=longitude, is_active=is_active, description=description)
     if 'error' in sensor:
         return jsonify({'error': f'Error creating sensor'}), 500
     return jsonify(sensor)
@@ -44,47 +44,53 @@ def create_sensor():
 @sensor_bp.route('', methods=['GET'])
 @jwt_required()
 def get_sensors():
-    id = get_jwt_identity()
-    user = auth_service.get_user(id)
+    user_id = get_jwt_identity()
+    user = auth_service.get_user(user_id)
 
     if not user:
         return jsonify({'error': 'User does not exist'})    
     
-    sensors = sensor_service.get_sensors(id)
-    if not sensors:
+    sensors = sensor_service.get_sensors(user_id)
+    if sensors is None:
         return jsonify({'error': f'Error fetching sensors'}), 500
     return jsonify(sensors)
 
 # GET
 @sensor_bp.route('/<sensor_id>', methods=['GET'])
 @jwt_required()
-def get_sensor(id=None):
-    id = get_jwt_identity()
-    user = auth_service.get_user(id)
+def get_sensor(sensor_id=None):
+    user_id = get_jwt_identity()
+    user = auth_service.get_user(user_id)
+    if not sensor_id or not sensor_id.isnumeric():
+        return jsonify({'error': f'Invalid sensor id'})
 
     if not user:
-        return jsonify({'error': 'User does not exist'})   
+        return jsonify({'error': 'User does not exist'}) 
+    if not Sensor.query.filter_by(user_id=user_id, id=sensor_id).first():
+        return jsonify({'error': 'Sensor does not exist'})    
     
-    sensor = sensor_service.get_sensor(id)
+    sensor = sensor_service.get_sensor(user_id)
     if not sensor:
         return jsonify({'error': f'Error fetching sensor'}), 500
     return jsonify(sensor)
     
 
 # PUT
-@sensor_bp.route('/<sensor_id>', methods=['PUT'])
+@sensor_bp.route('', methods=['PUT'])
 @jwt_required()
-def update_sensor(sensor_id=None):
+def update_sensor():
     id = get_jwt_identity()
     user = auth_service.get_user(id)
+    data = request.get_json()
+    sensor_id = data.get('id')
 
+    if not sensor_id or not sensor_id.isnumeric():
+        return jsonify({'error': f'Invalid sensor id'})
     if not user:
         return jsonify({'error': 'User does not exist'})   
-    if not sensor_id or Sensor.query.get(sensor_id).first():
+    if not sensor_id or not Sensor.query.filter_by(id=sensor_id, user_id=id).first():
         return jsonify({'error': 'Sensor does not exist'})   
     
-    data = request.get_json()
-    update_sensor_request = {}
     type = data.get('type')
     is_valid_lat, latitude = to_float(data.get('latitude'))
     is_valid_long, longitude = to_float(data.get('longitude'))
@@ -96,7 +102,7 @@ def update_sensor(sensor_id=None):
     if not is_valid_active:
         return jsonify({'error': 'is_active must be "true" or "false"'})
     
-    update_sensor_request['type': type, 'latitude': latitude, 'longitude': longitude, 'is_active': is_active, 'description': description]
+    update_sensor_request = {'type': type, 'latitude': latitude, 'longitude': longitude, 'is_active': is_active, 'description': description}
     updated_sensor = sensor_service.update_sensor(sensor_id, update_sensor_request)
 
     if not updated_sensor:
@@ -113,8 +119,8 @@ def remove_sensor(sensor_id=None):
 
     if not user:
         return jsonify({'error': 'User does not exist'}) 
-    if not sensor_id or Sensor.query.filter_by(id=sensor_id, user_id=id).first():
-        return jsonify({'error': 'Sensor does not exist'})   
+    if not sensor_id or not Sensor.query.filter_by(id=sensor_id, user_id=id).first():
+        return jsonify({'error': 'Sensor does not exist'})
     
     deleted = sensor_service.delete_sensor(sensor_id)
     if not deleted:
