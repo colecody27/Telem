@@ -12,6 +12,21 @@ class Role(PyEnum):
     ENGINEER = 'engineer'
     ADMIN = 'admin'
 
+class SensorType(PyEnum):
+    TEMPERATURE = "temperature"
+    PRESSURE = "pressure"
+    HUMIDITY = "humidity"
+    ACCELERATION = "acceleration"
+    GYROSCOPE = "gyroscope"
+    MAGNETIC_FIELD = "magnetic_field"
+    ALTITUDE = "altitude"
+    VELOCITY = "velocity"
+    VOLTAGE = "voltage"
+    CURRENT = "current"
+    LIGHT_INTENSITY = "light_intensity"
+    SOUND_LEVEL = "sound_level"
+    GAS_CONCENTRATION = "gas_concentration"
+
 class Alert(db.Model):
     __tablename__ = 'Alerts'
 
@@ -70,8 +85,8 @@ class Sensor_Data(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     sensor_id = db.Column(db.Integer, db.ForeignKey('Sensors.id', ondelete='CASCADE'), nullable=False)
-    value = db.Column(db.String(50), nullable=False)
-    unit = db.Column(db.String(50), default=False)
+    value = db.Column(db.Float, nullable=False)
+    unit = db.Column(SQLEnum(SensorType, native_enum=False), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
     sensor = db.relationship("Sensor", back_populates="sensor_data")
@@ -81,7 +96,7 @@ class Sensor_Data(db.Model):
             "id": self.id,
             "sensor_id": self.sensor_id,
             "value": self.value,
-            "unit": self.unit,
+            "unit": self.unit.value,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 

@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models import Sensor
+from app.models import Sensor, Sensor_Data, SensorType
 from sqlalchemy.exc import SQLAlchemyError
 from app.logger import logger
 
@@ -77,7 +77,6 @@ def update_sensor(sensor_id, fields):
         logger.error(f"Error updating sensor {sensor_id}: {e}")
         return None
 
-
 def delete_sensor(sensor_id):
     """Delete sensor by id. Returns True on success, False otherwise."""
     try:
@@ -92,3 +91,60 @@ def delete_sensor(sensor_id):
         db.session.rollback()
         logger.error(f"Error deleting sensor {sensor_id}: {e}")
         return False
+
+def log_sensor_data(user_id, sensor_id, data):
+    """Log a new sensor data point for sensor_id by user_id.
+
+    Returns the created sensor_data dict on success, or an error dict with 'code'.
+    """
+    sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id)
+    if not sensor:
+        return {"error": "Sensor not found"}
+    try:
+        unit=SensorType(data['unit'].lower())
+        value=float(data['value'])
+    except ValueError:
+        logger.info(f"Unable to log sensor data because unit or value is invalid")
+        return {"error": "Unit or value is invalid"}
+    try:
+        sensor_data = Sensor_Data(sensor_id=sensor_id, value=value, unit=unit)
+        db.session.add(sensor_data)
+        db.session.commit()
+        logger.info(f'Successfully added sensor data for sesor {sensor_id}')
+    except SQLAlchemyError:
+        logger.error(f"Error adding sensor data for sensor {sensor_id}")
+        db.session.rollback()
+        return {"error": "Error adding sensor data"}
+    
+    return sensor_data.to_dict()
+
+def get_sensor_data(user_id, sensor_id):
+    try:
+        sensor = Sensor.query.get(sensor_id)
+        if not sensor:
+            return {"error": "Sensor not found", "code": 404}
+        if sensor.user_id != user_id:
+            return {"error": "Unauthorized to view data for this sensor", "code": 403}
+
+        data_rows = Sensor_Data.query.filter_by(sensor_id=sensor_id).order_by(Sensor_Data.created_at.asc()).all()
+        return [d.to_dict() for d in data_rows]
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching sensor data for sensor {sensor_id}: {e}")
+        return {"error": "Internal service error", "code": 500}
+
+def remove_sensor_data(user_id, sensor_id):
+    try:
+        sensor = Sensor.query.get(sensor_id)
+        if not sensor:
+            return {"error": "Sensor not found", "code": 404}
+        if sensor.user_id != user_id:
+            return {"error": "Unauthorized to delete data for this sensor", "code": 403}
+
+        deleted = Sensor_Data.query.filter_by(sensor_id=sensor_id).delete()
+        db.session.commit()
+        logger.info(f"Deleted {deleted} data rows for sensor {sensor_id}")
+        return {"deleted": deleted}
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.error(f"Error deleting sensor data for sensor {sensor_id}: {e}")
+        return {"error": "Internal service error", "code": 500}

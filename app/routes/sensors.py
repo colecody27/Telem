@@ -35,10 +35,8 @@ def create_sensor():
     sensor = sensor_service.create_sensor(user_id=user_id, type=type, latitude=latitude, longitude=longitude, is_active=is_active, description=description)
     if 'error' in sensor:
         return jsonify({'error': f'Error creating sensor'}), 500
+    
     return jsonify(sensor)
-
-
-
 
 # GET
 @sensor_bp.route('', methods=['GET'])
@@ -53,6 +51,7 @@ def get_sensors():
     sensors = sensor_service.get_sensors(user_id)
     if sensors is None:
         return jsonify({'error': f'Error fetching sensors'}), 500
+    
     return jsonify(sensors)
 
 # GET
@@ -72,8 +71,8 @@ def get_sensor(sensor_id=None):
     sensor = sensor_service.get_sensor(user_id)
     if not sensor:
         return jsonify({'error': f'Error fetching sensor'}), 500
-    return jsonify(sensor)
     
+    return jsonify(sensor)
 
 # PUT
 @sensor_bp.route('', methods=['PUT'])
@@ -107,8 +106,8 @@ def update_sensor():
 
     if not updated_sensor:
         return jsonify({'error': f'Error updating sensor'}), 500
+    
     return jsonify(updated_sensor)
-
 
 # DELETE
 @sensor_bp.route('/<sensor_id>', methods=['DELETE'])
@@ -125,4 +124,43 @@ def remove_sensor(sensor_id=None):
     deleted = sensor_service.delete_sensor(sensor_id)
     if not deleted:
         return jsonify('error' f'Error deleting sensor'), 500
+    
     return jsonify({'msg': f'Sensor {sensor_id} has been deleted'})
+
+# POST 
+@sensor_bp.route('/<sensor_id>/data', methods=['POST'])
+@jwt_required()
+def add_sensor_data(sensor_id=None):
+    user_id = get_jwt_identity()
+    user = auth_service.get_user(user_id)
+    data = request.get_json()
+
+    if data.get('value') is None or data.get('unit') is None:
+        return jsonify({'error': 'Value and unit must be provided'})
+    if not user:
+        return jsonify({'error': 'User does not exist'})
+    
+    data_log = sensor_service.log_sensor_data(user_id=user_id, sensor_id=sensor_id, data=data)
+
+    if 'error' in data_log:
+        return jsonify({'error': 'Error adding data'}), 500
+    
+    return jsonify(data_log)
+
+# GET
+@sensor_bp.route('/<sensor_id>/data/<data_id>', methods=['GET'])
+@jwt_required()
+def get_sensor_data(sensor_id=None, data_id=None):
+    pass
+
+# GET
+@sensor_bp.route('/<sensor_id>/data', methods=['GET'])
+@jwt_required()
+def get_latest_sensor_data(sensor_id=None):
+    pass
+
+# DELETE
+@sensor_bp.route('/<sensor_id>/data', methods=['DELETE'])
+@jwt_required()
+def remove_sensor_data(id=None):
+    pass
