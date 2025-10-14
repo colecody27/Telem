@@ -2,6 +2,7 @@ from app.extensions import db
 from app.models import Sensor, Sensor_Data, SensorType
 from sqlalchemy.exc import SQLAlchemyError
 from app.logger import logger
+from app.utils import *
 
 def create_sensor(user_id, type, latitude=None,
                   longitude=None, is_active=False,
@@ -100,12 +101,15 @@ def log_sensor_data(user_id, sensor_id, data):
     sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id)
     if not sensor:
         return {"error": "Sensor not found"}
+    
+    is_valid_value, value = to_float(data['value'])
+    if not is_valid_value:
+        return {"error": "Invalid value"}
     try:
         unit=SensorType(data['unit'].lower())
-        value=float(data['value'])
     except ValueError:
-        logger.info(f"Unable to log sensor data because unit or value is invalid")
-        return {"error": "Unit or value is invalid"}
+        logger.info(f"Unable to log sensor data because unit {data['unit']} isn't valid")
+        return {"error": f"Unable to log sensor data because unit {data['unit']} isn't valid. Unit must be one of the following units: {[type.value for type in SensorType]}"}
     try:
         sensor_data = Sensor_Data(sensor_id=sensor_id, value=value, unit=unit)
         db.session.add(sensor_data)
@@ -120,11 +124,9 @@ def log_sensor_data(user_id, sensor_id, data):
 
 def get_sensor_data(user_id, sensor_id):
     try:
-        sensor = Sensor.query.get(sensor_id)
+        sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id).first()
         if not sensor:
             return {"error": "Sensor not found", "code": 404}
-        if sensor.user_id != user_id:
-            return {"error": "Unauthorized to view data for this sensor", "code": 403}
 
         data_rows = Sensor_Data.query.filter_by(sensor_id=sensor_id).order_by(Sensor_Data.created_at.asc()).all()
         return [d.to_dict() for d in data_rows]

@@ -143,21 +143,28 @@ def add_sensor_data(sensor_id=None):
     data_log = sensor_service.log_sensor_data(user_id=user_id, sensor_id=sensor_id, data=data)
 
     if 'error' in data_log:
-        return jsonify({'error': 'Error adding data'}), 500
+        return jsonify(data_log), 500
     
     return jsonify(data_log)
 
 # GET
-@sensor_bp.route('/<sensor_id>/data/<data_id>', methods=['GET'])
-@jwt_required()
-def get_sensor_data(sensor_id=None, data_id=None):
-    pass
-
-# GET
 @sensor_bp.route('/<sensor_id>/data', methods=['GET'])
 @jwt_required()
-def get_latest_sensor_data(sensor_id=None):
-    pass
+def get_sensor_data(sensor_id=None):
+    user_id = get_jwt_identity()
+    user = auth_service.get_user(user_id)
+    
+    if not user:
+        return jsonify({'error': 'User does not exist'})    
+    
+    sensor_data = sensor_service.get_sensor_data(user_id=user_id, sensor_id=sensor_id)
+    return jsonify(sensor_data)
+
+# # GET
+# @sensor_bp.route('/<sensor_id>/data', methods=['GET'])
+# @jwt_required()
+# def get_latest_sensor_data(sensor_id=None):
+#     pass
 
 # DELETE
 @sensor_bp.route('/<sensor_id>/data', methods=['DELETE'])
