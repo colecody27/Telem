@@ -135,13 +135,14 @@ def add_sensor_data(sensor_id=None):
     user_id = get_jwt_identity()
     user = auth_service.get_user(user_id)
     data = request.get_json()
-
-    if data.get('value') is None or data.get('unit') is None:
-        return jsonify({'error': 'Value and unit must be provided'})
+    
+    print(data)
     if not user:
         return jsonify({'error': 'User does not exist'})
-    
-    data_log = sensor_service.log_sensor_data(user_id=user_id, sensor_id=sensor_id, data=data)
+    if not data['readings']:
+        return jsonify({'error': 'No readings provided'})
+
+    data_log = sensor_service.log_sensor_data(user_id=user_id, sensor_id=sensor_id, data=data['readings'])
 
     if 'error' in data_log:
         return jsonify(data_log), 500

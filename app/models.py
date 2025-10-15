@@ -12,20 +12,41 @@ class Role(PyEnum):
     ENGINEER = 'engineer'
     ADMIN = 'admin'
 
-class SensorType(PyEnum):
-    TEMPERATURE = "temperature"
-    PRESSURE = "pressure"
-    HUMIDITY = "humidity"
-    ACCELERATION = "acceleration"
-    GYROSCOPE = "gyroscope"
-    MAGNETIC_FIELD = "magnetic_field"
-    ALTITUDE = "altitude"
-    VELOCITY = "velocity"
-    VOLTAGE = "voltage"
-    CURRENT = "current"
-    LIGHT_INTENSITY = "light_intensity"
-    SOUND_LEVEL = "sound_level"
-    GAS_CONCENTRATION = "gas_concentration"
+class Unit(PyEnum):
+    # Length / distance
+    METERS = "m"
+    CENTIMETERS = "cm"
+    MILLIMETERS = "mm"
+    INCHES = "in"
+    FEET = "ft"
+
+    # Temperature
+    CELSIUS = "°C"
+    FAHRENHEIT = "°F"
+    KELVIN = "K"
+
+    # Pressure
+    PASCAL = "Pa"
+    BAR = "bar"
+    PSI = "psi"
+
+    # Acceleration / motion
+    METERS_PER_SECOND2 = "m/s^2"
+    G_FORCE = "g"
+    METERS_PER_SECOND = "m/s"
+
+    # Magnetic / electric
+    TESLA = "T"
+    VOLT = "V"
+    AMPERE = "A"
+
+    # Light / sound
+    LUX = "lx"
+    DECIBEL = "dB"
+
+    # Gas / concentration
+    PARTS_PER_MILLION = "ppm"
+    PERCENT = "%"
 
 class Alert(db.Model):
     __tablename__ = 'Alerts'
@@ -86,7 +107,7 @@ class Sensor_Data(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sensor_id = db.Column(db.Integer, db.ForeignKey('Sensors.id', ondelete='CASCADE'), nullable=False)
     value = db.Column(db.Float, nullable=False)
-    unit = db.Column(SQLEnum(SensorType, native_enum=False), nullable=False)
+    unit = db.Column(SQLEnum(Unit, native_enum=False), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
     sensor = db.relationship("Sensor", back_populates="sensor_data")

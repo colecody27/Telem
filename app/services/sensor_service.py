@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models import Sensor, Sensor_Data, SensorType
+from app.models import Sensor, Sensor_Data, Unit
 from sqlalchemy.exc import SQLAlchemyError
 from app.logger import logger
 from app.utils import *
@@ -94,7 +94,7 @@ def delete_sensor(sensor_id):
         return False
 
 def log_sensor_data(user_id, sensor_id, data):
-    """Log a new sensor data point for sensor_id by user_id.
+    """Log sensor data for a sensor_id by user_id.
 
     Returns the created sensor_data dict on success, or an error dict with 'code'.
     """
@@ -102,25 +102,29 @@ def log_sensor_data(user_id, sensor_id, data):
     if not sensor:
         return {"error": "Sensor not found"}
     
-    is_valid_value, value = to_float(data['value'])
-    if not is_valid_value:
-        return {"error": "Invalid value"}
-    try:
-        unit=SensorType(data['unit'].lower())
-    except ValueError:
-        logger.info(f"Unable to log sensor data because unit {data['unit']} isn't valid")
-        return {"error": f"Unable to log sensor data because unit {data['unit']} isn't valid. Unit must be one of the following units: {[type.value for type in SensorType]}"}
-    try:
-        sensor_data = Sensor_Data(sensor_id=sensor_id, value=value, unit=unit)
-        db.session.add(sensor_data)
-        db.session.commit()
-        logger.info(f'Successfully added sensor data for sesor {sensor_id}')
-    except SQLAlchemyError:
-        logger.error(f"Error adding sensor data for sensor {sensor_id}")
-        db.session.rollback()
-        return {"error": "Error adding sensor data"}
-    
-    return sensor_data.to_dict()
+    readings_added = []
+    for reading in data:
+        unit, value = reading['unit'], reading['value']
+        is_valid_value, value = to_float(value)
+        if not is_valid_value:
+            return {"error": "Invalid value"}
+        try:
+            unit=Unit(unit)
+        except ValueError:
+            logger.info(f"Unable to log sensor data because unit {unit} isn't valid")
+            return {"error": f"Unable to log sensor data because unit {unit} isn't valid. Unit must be one of the following units: {[type.value for type in Unit]}"}
+        try:
+            sensor_data = Sensor_Data(sensor_id=sensor_id, value=value, unit=unit)
+            db.session.add(sensor_data)
+            readings_added.append(sensor_data.to_dict())
+            logger.info(f'Successfully added sensor data for sesor {sensor_id}')
+        except SQLAlchemyError:
+            logger.error(f"Error adding sensor data for sensor {sensor_id}")
+            db.session.rollback()
+            return {"error": "Error adding sensor data"}
+        
+    db.session.commit()
+    return readings_added
 
 def get_sensor_data(user_id, sensor_id):
     try:
