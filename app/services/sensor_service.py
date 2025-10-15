@@ -5,7 +5,7 @@ from app.logger import logger
 from app.utils import *
 
 def create_sensor(user_id, type, latitude=None,
-                  longitude=None, is_active=False,
+                  longitude=None, is_active=True,
                   description=None):
     """
     Create and persist a new Sensor.
@@ -56,7 +56,7 @@ def get_sensor(sensor_id):
 
 def update_sensor(sensor_id, fields):
     """Update allowed sensor fields and return the updated dict, or None on not found/error."""
-    allowed = {"type", "latitude", "longitude", "is_active", "description", "ack", "ack_by"}
+    allowed = {"type", "latitude", "longitude", "is_active", "description"}
     try:
         sensor = Sensor.query.get(sensor_id)
         if not sensor:
@@ -98,7 +98,7 @@ def log_sensor_data(user_id, sensor_id, data):
 
     Returns the created sensor_data dict on success, or an error dict with 'code'.
     """
-    sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id)
+    sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id).first()
     if not sensor:
         return {"error": "Sensor not found"}
     

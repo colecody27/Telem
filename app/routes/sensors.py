@@ -77,15 +77,14 @@ def get_sensor(sensor_id=None):
 # TODO - GET all data for every sensor
 
 # PUT
-@sensor_bp.route('', methods=['PUT'])
+@sensor_bp.route('/<sensor_id>', methods=['PUT'])
 @jwt_required()
-def update_sensor():
+def update_sensor(sensor_id):
     id = get_jwt_identity()
     user = auth_service.get_user(id)
     data = request.get_json()
-    sensor_id = data.get('id')
 
-    if not sensor_id or not sensor_id.isnumeric():
+    if sensor_id is None or not sensor_id.isnumeric():
         return jsonify({'error': f'Invalid sensor id'})
     if not user:
         return jsonify({'error': 'User does not exist'})   
