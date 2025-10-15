@@ -74,6 +74,8 @@ def get_sensor(sensor_id=None):
     
     return jsonify(sensor)
 
+# TODO - GET all data for every sensor
+
 # PUT
 @sensor_bp.route('', methods=['PUT'])
 @jwt_required()
@@ -160,14 +162,15 @@ def get_sensor_data(sensor_id=None):
     sensor_data = sensor_service.get_sensor_data(user_id=user_id, sensor_id=sensor_id)
     return jsonify(sensor_data)
 
-# # GET
-# @sensor_bp.route('/<sensor_id>/data', methods=['GET'])
-# @jwt_required()
-# def get_latest_sensor_data(sensor_id=None):
-#     pass
-
 # DELETE
-@sensor_bp.route('/<sensor_id>/data', methods=['DELETE'])
+@sensor_bp.route('/<sensor_id>/data/<data_id>', methods=['DELETE'])
 @jwt_required()
-def remove_sensor_data(id=None):
-    pass
+def remove_sensor_data(sensor_id=None, data_id=None):
+    user_id = get_jwt_identity()
+    user = auth_service.get_user(user_id)
+    
+    if not user:
+        return jsonify({'error': 'User does not exist'}) 
+    
+    deleted_data = sensor_service.remove_sensor_data(sensor_id=sensor_id, user_id=user_id, data_id=data_id)
+    return jsonify(deleted_data)

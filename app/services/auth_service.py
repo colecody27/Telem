@@ -22,22 +22,22 @@ def get_user(id):
     return user.to_dict() if user else None
 
 # Validate credentials and return JWT
-def authenticate_user(email, password):
-    user = User.query.filter_by(email=email).first()
+def authenticate_user(username, password):
+    user = User.query.filter_by(username=username).first()
     
     if not user:
-        logger.info(f'Authentication of user with email: {email} as failed since email DNE')
-        return {'error': f'User with email {email} does not exist, plaese register'}
-    if email != user.email or not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+        logger.info(f'Authentication of user with email: {username} as failed since email DNE')
+        return {'error': f'User with email {username} does not exist, plaese register'}
+    if username != user.username or not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
         print(f'Provided pw: {password.encode("utf-8")} Stored PW: {user.password_hash}')
-        logger.info(f'Authentication of user with email: {email} as failed')
+        logger.info(f'Authentication of user with email: {username} as failed')
         return {'error': f'Email or password is incorrect'}
     
     token = create_access_token(identity=str(user.id))
-    logger.info(f'User with email: {email} has been authenticated')
+    logger.info(f'User with email: {username} has been authenticated')
     return token
 
-# Revoke token 
+# TODO - Revoke token 
 def logout_user():
     pass
 

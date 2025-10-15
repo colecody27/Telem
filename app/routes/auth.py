@@ -17,24 +17,22 @@ def get_user():
     
     return jsonify(user)
 
-
 # POST
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    email = request.json.get('email')
+    username = request.json.get('username')
     password = request.json.get('password')
 
     # Validate email/password exist 
-    if not email or not password:
+    if not username or not password:
         return jsonify({'error': 'Missing email or password'}), 401
     
     # Verify account
-    token = auth_service.authenticate_user(email, password)
+    token = auth_service.authenticate_user(username, password)
     if 'error' in token:
         return jsonify({'error': 'Invalid email or password'}), 401
 
     return jsonify(access_token=token)
-
 
 # POST
 @auth_bp.route('/register', methods=['POST'])

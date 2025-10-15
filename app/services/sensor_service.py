@@ -134,18 +134,19 @@ def get_sensor_data(user_id, sensor_id):
         logger.error(f"Error fetching sensor data for sensor {sensor_id}: {e}")
         return {"error": "Internal service error", "code": 500}
 
-def remove_sensor_data(user_id, sensor_id):
+def remove_sensor_data(user_id, sensor_id, data_id):
     try:
-        sensor = Sensor.query.get(sensor_id)
+        sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id).first()
         if not sensor:
             return {"error": "Sensor not found", "code": 404}
-        if sensor.user_id != user_id:
-            return {"error": "Unauthorized to delete data for this sensor", "code": 403}
 
-        deleted = Sensor_Data.query.filter_by(sensor_id=sensor_id).delete()
+        deleted = Sensor_Data.query.filter_by(id=data_id).delete()
         db.session.commit()
         logger.info(f"Deleted {deleted} data rows for sensor {sensor_id}")
-        return {"deleted": deleted}
+        if deleted:
+            return {"msg": f"Successfully removed sensor data ID {data_id} for sensor {sensor_id}"}
+        else:
+            return {"msg": f"Data ID {data_id} for sensor {sensor_id} does not exist"}
     except SQLAlchemyError as e:
         db.session.rollback()
         logger.error(f"Error deleting sensor data for sensor {sensor_id}: {e}")
