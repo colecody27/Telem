@@ -207,8 +207,8 @@ As stated, the backend is currently only setup for local usage. For future usage
 
 ```bash
 TERMINAL 1 - BACKEND
-git clone https://github.com/colecody27/telem-api
-cd telem-api
+git clone https://github.com/colecody27/telem
+cd telem
 
 python3 -m venv venv
 source venv/bin/activate
@@ -261,7 +261,7 @@ telem
 ## 🫡 Feedback and Contributing
 
 Lots of improvements to be made! I welcome any feedback and contributions. 
-[Issues](https://github.com/colecody27/iot-api/issues)
+[Issues](https://github.com/colecody27/telem-cli/issues)
 
 ---
 
