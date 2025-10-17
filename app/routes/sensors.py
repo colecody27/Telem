@@ -129,20 +129,19 @@ def remove_sensor(sensor_id=None):
     return jsonify({'msg': f'Sensor {sensor_id} has been deleted'})
 
 # POST 
-@sensor_bp.route('/<sensor_id>/data', methods=['POST'])
+@sensor_bp.route('/data', methods=['POST'])
 @jwt_required()
-def add_sensor_data(sensor_id=None):
+def add_sensor_data():
     user_id = get_jwt_identity()
     user = auth_service.get_user(user_id)
     data = request.get_json()
     
-    print(data)
     if not user:
         return jsonify({'error': 'User does not exist'})
     if not data['readings']:
         return jsonify({'error': 'No readings provided'})
 
-    data_log = sensor_service.log_sensor_data(user_id=user_id, sensor_id=sensor_id, data=data['readings'])
+    data_log = sensor_service.log_sensor_data(user_id=user_id, data=data['readings'])
 
     if 'error' in data_log:
         return jsonify(data_log), 500
@@ -172,5 +171,18 @@ def remove_sensor_data(sensor_id=None, data_id=None):
     if not user:
         return jsonify({'error': 'User does not exist'}) 
     
-    deleted_data = sensor_service.remove_sensor_data(sensor_id=sensor_id, user_id=user_id, data_id=data_id)
+    deleted_data = sensor_service.remove_sensor_data(user_id=user_id, sensor_id=sensor_id, data_id=data_id)
+    return jsonify(deleted_data)
+
+# DELETE
+@sensor_bp.route('/<sensor_id>/data', methods=['DELETE'])
+@jwt_required()
+def remove_all_sensor_data(sensor_id=None):
+    user_id = get_jwt_identity()
+    user = auth_service.get_user(user_id)
+    
+    if not user:
+        return jsonify({'error': 'User does not exist'}) 
+    
+    deleted_data = sensor_service.remove_all_sensor_data(user_id=user_id, sensor_id=sensor_id)
     return jsonify(deleted_data)

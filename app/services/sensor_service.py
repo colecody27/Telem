@@ -7,11 +7,6 @@ from app.utils import *
 def create_sensor(user_id, type, latitude=None,
                   longitude=None, is_active=True,
                   description=None):
-    """
-    Create and persist a new Sensor.
-
-    Returns the created sensor as a dict, or an error dict on failure.
-    """
 
     sensor = Sensor(
         user_id=user_id,
@@ -93,18 +88,17 @@ def delete_sensor(sensor_id):
         logger.error(f"Error deleting sensor {sensor_id}: {e}")
         return False
 
-def log_sensor_data(user_id, sensor_id, data):
-    """Log sensor data for a sensor_id by user_id.
-
-    Returns the created sensor_data dict on success, or an error dict with 'code'.
-    """
-    sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id).first()
-    if not sensor:
-        return {"error": "Sensor not found"}
-    
+def log_sensor_data(user_id, data):
     readings_added = []
     for reading in data:
-        unit, value = reading['unit'], reading['value']
+        sensor_id = reading.get("sensor_id")
+        unit = reading.get("unit")
+        value = reading.get("value") 
+        sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id).first()
+        if not sensor:
+            logger.info(f"Sensor {sensor_id} not found for user {user_id} when attempting to log data")
+            continue
+
         is_valid_value, value = to_float(value)
         if not is_valid_value:
             return {"error": "Invalid value"}
@@ -116,15 +110,15 @@ def log_sensor_data(user_id, sensor_id, data):
         try:
             sensor_data = Sensor_Data(sensor_id=sensor_id, value=value, unit=unit)
             db.session.add(sensor_data)
-            readings_added.append(sensor_data.to_dict())
+            readings_added.append(sensor_data)
             logger.info(f'Successfully added sensor data for sesor {sensor_id}')
         except SQLAlchemyError:
             logger.error(f"Error adding sensor data for sensor {sensor_id}")
             db.session.rollback()
             return {"error": "Error adding sensor data"}
-        
+    logger.info(f"{len(readings_added)} out of {len(data)} requested data were points added for {user_id}")
     db.session.commit()
-    return readings_added
+    return [reading.to_dict() for reading in readings_added]
 
 def get_sensor_data(user_id, sensor_id):
     try:
@@ -151,6 +145,26 @@ def remove_sensor_data(user_id, sensor_id, data_id):
             return {"msg": f"Successfully removed sensor data ID {data_id} for sensor {sensor_id}"}
         else:
             return {"msg": f"Data ID {data_id} for sensor {sensor_id} does not exist"}
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.error(f"Error deleting sensor data for sensor {sensor_id}: {e}")
+        return {"error": "Internal service error", "code": 500}
+
+
+def remove_all_sensor_data(user_id, sensor_id):
+    try:
+        sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id).first()
+        if not sensor:
+            return {"error": "Sensor not found", "code": 404}
+        
+        deleted = Sensor_Data.query.filter_by(sensor_id=sensor_id).delete()
+
+        db.session.commit()
+        logger.info(f"Deleted all data rows for sensor {sensor_id}")
+        if deleted:
+            return {"msg": f"Successfully removed sensor data for sensor {sensor_id}"}
+        else:
+            return {"msg": f"No sensor data to remove for sensor {sensor_id}"}
     except SQLAlchemyError as e:
         db.session.rollback()
         logger.error(f"Error deleting sensor data for sensor {sensor_id}: {e}")

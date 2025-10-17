@@ -86,8 +86,8 @@ class Sensor(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
     user = db.relationship("User", back_populates="sensors")
-    sensor_data = db.relationship("Sensor_Data", back_populates="sensor")
-    alerts = db.relationship("Alert", back_populates="sensor")
+    sensor_data = db.relationship("Sensor_Data", back_populates="sensor", cascade="all, delete-orphan")
+    alerts = db.relationship("Alert", back_populates="sensor", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
