@@ -156,9 +156,18 @@ def get_sensor_data(sensor_id=None):
     user = auth_service.get_user(user_id)
     
     if not user:
-        return jsonify({'error': 'User does not exist'})    
+        return jsonify({'error': 'User does not exist'})
+    filters = request.get_json()['filters']
+        
+    days = to_int(filters.get('days', 0))
+    hours = to_int(filters.get('hours', 0))
+    mins = to_int(filters.get('mins', 0))
     
-    sensor_data = sensor_service.get_sensor_data(user_id=user_id, sensor_id=sensor_id)
+    filters['days'] = days 
+    filters['hours'] = hours
+    filters['mins'] = mins 
+    
+    sensor_data = sensor_service.get_sensor_data(user_id=user_id, sensor_id=sensor_id, filters=filters)
     return jsonify(sensor_data)
 
 # DELETE

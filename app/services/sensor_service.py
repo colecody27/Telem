@@ -3,6 +3,7 @@ from app.models import Sensor, Sensor_Data, Unit
 from sqlalchemy.exc import SQLAlchemyError
 from app.logger import logger
 from app.utils import *
+from datetime import timedelta, datetime
 
 def create_sensor(user_id, type, latitude=None,
                   longitude=None, is_active=True,
@@ -120,15 +121,55 @@ def log_sensor_data(user_id, data):
     db.session.commit()
     return [reading.to_dict() for reading in readings_added]
 
-def get_sensor_data(user_id, sensor_id):
+def get_sensor_data(user_id, sensor_id, filters):
     try:
         sensor = Sensor.query.filter_by(id=sensor_id, user_id=user_id).first()
         if not sensor:
             return {"error": "Sensor not found", "code": 404}
 
-        data_rows = Sensor_Data.query.filter_by(sensor_id=sensor_id).order_by(Sensor_Data.created_at.asc()).all()
-        return [d.to_dict() for d in data_rows]
+        # --- Time delta unpack ---
+        days = filters.get("days")
+        hours = filters.get("hours")   
+        mins = filters.get("mins")
+        time_delta = timedelta(days=days, hours=hours, minutes=mins)
+
+        query = Sensor_Data.query.filter_by(sensor_id=sensor_id)
+
+        # --- Time-based filter ---
+        if time_delta.total_seconds() > 0:
+            cutoff = datetime.utcnow() - time_delta
+            query = query.filter(Sensor_Data.created_at >= cutoff)
+
+        # --- Optional filters from params ---
+        unit = filters.get("unit")
+        if unit:
+            query = query.filter(Sensor_Data.unit == unit)
+
+        # --- Execute filtered query ---
+        data_rows = query.order_by(Sensor_Data.created_at.desc()).all()
+        data_dicts = [d.to_dict() for d in data_rows]
+
+        # --- Compute stats ---        
+        values = [data['value'] for data in data_dicts]
+        if len(values) == 0:
+            stat_avg = stat_max = stat_min = 'n/a'
+        else:
+            stat_avg = sum(values)/len(values)
+            stat_min = min(values)
+            stat_max = min(values), max(values)
+
+        return {
+            "data": data_dicts,
+            "summary": {
+                "average": stat_avg,
+                "min": stat_min,
+                "max": stat_max,
+                "count": len(data_dicts),
+            },
+        }
+
     except SQLAlchemyError as e:
+        db.session.rollback()
         logger.error(f"Error fetching sensor data for sensor {sensor_id}: {e}")
         return {"error": "Internal service error", "code": 500}
 

@@ -45,3 +45,11 @@ def to_boolean(value):
         return True, bool(value)
     except (TypeError, ValueError):
         return False, None
+    
+def to_int(value):
+    if value is None:
+        return 0
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
