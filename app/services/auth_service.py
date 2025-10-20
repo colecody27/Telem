@@ -1,4 +1,4 @@
-from app.extensions import db, jwt
+from app.extensions import db
 from app.models import User, Role
 from flask_jwt_extended import create_access_token
 import bcrypt

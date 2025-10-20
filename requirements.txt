@@ -1,0 +1,6 @@
+flask_jwt_extended
+flask_sqlalchemy
+bcrypt
+psycopg2
+Flask
+python-dotenv
